@@ -189,22 +189,28 @@ namespace ZhihuDatabase
                 {
                     _db = _client.GetDatabase("zhihu");
                     var collection = _db.GetCollection<BsonDocument>(splited[0].Trim());
-                    int count = _pageCount * PageSize;
+                    int count;
 
                     var filter = BsonDocument.Parse(splited[1].Trim());
                     if (_pageCount > 0 && nextPage)
                     {
+                        count = _pageCount * PageSize;
+
                         filter.Add("_id", new BsonDocument("$gt", _lastIds[_pageCount - 1]));
                     }
                     else if (_pageCount > 0 && !nextPage)
                     {
+                        count = (_pageCount - 2) * PageSize;
+
                         filter.Add("_id", new BsonDocument("$gte", _firstIds[_pageCount - 2]));
                     }
                     else
                     {
+                        count = _pageCount * PageSize;
+
                         _pages = (int) Math.Ceiling((double)collection.Find(filter).Count() / PageSize);
-                        _firstIds = new ObjectId[_pages];
-                        _lastIds = new ObjectId[_pages];
+                        _firstIds = new ObjectId[_pages + 1];
+                        _lastIds = new ObjectId[_pages + 1];
                     }
 
                     var contentBuilder = new StringBuilder();
