@@ -293,85 +293,22 @@ namespace ZhihuDatabase
     {
         private const string IndentString = "    ";
 
-        public static string PrettyPrint(string input)
+        public static string PrettyPrint(string json)
         {
-            var output = new StringBuilder(input.Length * 2);
-            char? quote = null;
-            int depth = 0;
+            json = json.Replace(", ", ",").Replace("{ ", "{").Replace("<", "&lt").Replace(">", "&gt");
+            int indentation = 0;
+            int quoteCount = 0;
+            var result =
+                from ch in json
+                let quotes = ch == '"' ? quoteCount++ : quoteCount
+                let lineBreak = ch == ',' && quotes % 2 == 0 ? ch + Environment.NewLine + String.Concat(Enumerable.Repeat(IndentString, indentation)) : null
+                let openChar = ch == '{' || ch == '[' ? ch + Environment.NewLine + String.Concat(Enumerable.Repeat(IndentString, ++indentation)) : ch.ToString()
+                let closeChar = ch == '}' || ch == ']' ? Environment.NewLine + String.Concat(Enumerable.Repeat(IndentString, --indentation)) + ch : ch.ToString()
+                select lineBreak ?? (openChar.Length > 1
+                           ? openChar
+                           : closeChar);
 
-            for (int i = 0; i < input.Length; ++i)
-            {
-                char ch = input[i];
-
-                switch (ch)
-                {
-                    case '{':
-                    case '[':
-                        output.Append(ch);
-                        if (!quote.HasValue)
-                        {
-                            output.AppendLine();
-                            output.Append(IndentString.Repeat(++depth));
-                        }
-                        break;
-                    case '}':
-                    case ']':
-                        if (quote.HasValue)
-                            output.Append(ch);
-                        else
-                        {
-                            output.AppendLine();
-                            output.Append(IndentString.Repeat(--depth));
-                            output.Append(ch);
-                        }
-                        break;
-                    case '"':
-                    case '\'':
-                        output.Append(ch);
-                        if (quote.HasValue)
-                        {
-                            if (!output.IsEscaped(i))
-                                quote = null;
-                        }
-                        else quote = ch;
-                        break;
-                    case ',':
-                        output.Append(ch);
-                        if (!quote.HasValue)
-                        {
-                            output.AppendLine();
-                            output.Append(IndentString.Repeat(depth));
-                        }
-                        break;
-                    case ':':
-                        if (quote.HasValue) output.Append(ch);
-                        else output.Append(" : ");
-                        break;
-                    default:
-                        if (quote.HasValue || !char.IsWhiteSpace(ch))
-                            output.Append(ch);
-                        break;
-                }
-            }
-
-            return output.ToString();
-        }
-
-        public static string Repeat(this string str, int count)
-        {
-            return new StringBuilder().Insert(0, str, count).ToString();
-        }
-
-        public static bool IsEscaped(this string str, int index)
-        {
-            bool escaped = false;
-            while (index > 0 && str[--index] == '\\') escaped = !escaped;
-            return escaped;
-        }
-
-        public static bool IsEscaped(this StringBuilder str, int index)
-        {
-            return str.ToString().IsEscaped(index);
+            return String.Concat(result);
         }
     }
 }
