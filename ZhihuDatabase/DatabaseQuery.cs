@@ -11,31 +11,35 @@ namespace ZhihuDatabase
     {
         private readonly MongoClient _client;
         private readonly string _dbName;
-        private readonly string _collectionName;
         private readonly BsonDocument _filter;
 
         private ObjectId[] _lastIds;
         private DateTime _queryTime;
 
+        public string SearchString { get; }
+        public string CollectionName { get; }
         public int PageSize { get; }
         public int CurrentPageNumber { get; private set; }
         public int PageCount { get; private set; }
-        
-        public DatabaseQuery(MongoClient mongoClient, string databaseName, string collectionName, 
-            BsonDocument filter, int pageSize)
+
+        public DatabaseQuery(MongoClient mongoClient, string databaseName, 
+            string searchString, int pageSize)
         {
             _client = mongoClient;
             _dbName = databaseName;
-            _collectionName = collectionName;
-            _filter = filter;
-            
+
+            var splited = searchString.Split(new[] { ':' }, 2);
+            _filter = BsonDocument.Parse(splited[1].Trim());
+            CollectionName = splited[0].Trim();
+
+            SearchString = searchString;
             PageSize = pageSize;
         }
 
-        public async void Init()
+        public async Task Init()
         {
             var db = _client.GetDatabase(_dbName);
-            var collection = db.GetCollection<BsonDocument>(_collectionName);
+            var collection = db.GetCollection<BsonDocument>(CollectionName);
             var resultCount = await Task.Run( () => collection.Find(_filter).Count() );
 
             CurrentPageNumber = 0;
@@ -48,7 +52,7 @@ namespace ZhihuDatabase
         public async Task<List<BsonDocument>> GetPage(int toPageNumber)
         {
             var db = _client.GetDatabase(_dbName);
-            var collection = db.GetCollection<BsonDocument>(_collectionName);
+            var collection = db.GetCollection<BsonDocument>(CollectionName);
 
             var skip = 0;
 

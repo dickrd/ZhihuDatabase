@@ -71,8 +71,6 @@ namespace ZhihuDatabase
         private MongoClient _client;
         private DatabaseQuery _query;
 
-        private int _pageCount;
-
         public MainWindow()
         {
             InitializeComponent();
@@ -85,11 +83,15 @@ namespace ZhihuDatabase
 
             if (((TextBox) sender).Name == TextBoxFilter.Name)
             {
-                Search(null, null);
+                Search(ButtonSearch, null);
             }
             else if (((TextBox) sender).Name == TextBoxConnect.Name)
             {
                 OnConnect(null, null);
+            }
+            else if (((TextBox)sender).Name == TextPage.Name)
+            {
+                Search(null, null);
             }
         }
 
@@ -166,31 +168,35 @@ namespace ZhihuDatabase
             }
             ButtonPreviousPage.IsEnabled = false;
             ButtonNextPage.IsEnabled = false;
+            TextPage.IsEnabled = false;
 
             WebContent.NavigateToString(string.Format(HtmlTemplate,
                 "<h1 class='text-monospace mdl-typography--title'>Please Wait</h1><p>Searching...</p>\n"));
 
-            var searchText = TextBoxFilter.Text;
-            var splited = searchText.Split(new[] {':'}, 2);
-            var nextPage = true;
-            if (sender == null || ((Button) sender).Name == ButtonSearch.Name)
+            var toPageNumber = Convert.ToInt32(TextPage.Text);
+            if (sender != null && ((Button) sender).Name == ButtonPreviousPage.Name)
             {
-                _query = new DatabaseQuery(_client, "zhihu", splited[0].Trim(),
-                    BsonDocument.Parse(splited[1].Trim()), PageSize);
+                toPageNumber--;
             }
-            else if (((Button) sender).Name == ButtonPreviousPage.Name)
+            else if (sender != null && ((Button) sender).Name == ButtonNextPage.Name)
             {
-                nextPage = false;
+                toPageNumber++;
+            }
+            else if (sender != null && ((Button)sender).Name == ButtonSearch.Name)
+            {
+                toPageNumber = 1;
+                _query = new DatabaseQuery(_client, "zhihu", TextBoxFilter.Text, PageSize);
+                await _query.Init();
             }
 
             try
             {
                 var contentBuilder = new StringBuilder();
-                var count = _query.PageSize;
-                var data = await _query.GetPage(1);
+                var count = _query.PageSize * (toPageNumber - 1);
+                var data = await _query.GetPage(toPageNumber);
                 foreach (var one in data)
                 {
-                    if (splited[0].Trim().Equals("answer"))
+                    if (_query.CollectionName.Equals("answer"))
                     {
                         var content = one.GetValue("content").ToString();
                         var answerUrl =
@@ -203,7 +209,7 @@ namespace ZhihuDatabase
                             count++,
                             $"<a target='_blank' href='{answerUrl}'>{answerUrl}</a></p><p><a target='_blank' href='{authorUrl}'>{authorUrl}</a>"));
                     }
-                    else if (splited[0].Trim().Equals("member"))
+                    else if (_query.CollectionName.Equals("member"))
                     {
                         var url = $"https://www.zhihu.com/people/{one.GetValue("memberId")}";
                         contentBuilder.Append(String.Format(HtmlContentTemplate,
@@ -217,11 +223,6 @@ namespace ZhihuDatabase
                             "", count++, ""));
                 }
 
-                if (nextPage)
-                    _pageCount++;
-                else
-                    _pageCount--;
-
                 WebContent.NavigateToString(string.Format(HtmlTemplate, contentBuilder));
                 PanelPage.Visibility = Visibility.Visible;
             }
@@ -233,18 +234,20 @@ namespace ZhihuDatabase
                 PanelPage.Visibility = Visibility.Hidden;
             }
 
+            TextBoxFilter.Text = _query.SearchString;
             ButtonPreviousPage.IsEnabled = true;
             ButtonNextPage.IsEnabled = true;
-            if (_pageCount == 1)
+            TextPage.IsEnabled = true;
+            TextPageCount.Text = $" / {_query.PageCount,3:D3}";
+            TextPage.Text = $"{_query.CurrentPageNumber, 3:D3}";
+            if (_query.CurrentPageNumber == 1)
             {
                 ButtonPreviousPage.IsEnabled = false;
             }
-            if (_pageCount == _query.PageCount)
+            if (_query.CurrentPageNumber == _query.PageCount)
             {
                 ButtonNextPage.IsEnabled = false;
             }
-
-            TextPageCount.Text = $"{_pageCount,3:D3} / {_query.PageCount,3:D3}";
         }
 
         static string StripHtml(string input)

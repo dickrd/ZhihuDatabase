@@ -37,7 +37,7 @@
               TextElement.FontFamily="Consolas monospace">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition Width="172"></ColumnDefinition>
+                <ColumnDefinition Width="178"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal">
                 <Button Name="ButtonConnect" Click="OnConnect" Style="{DynamicResource MaterialDesignFlatButton}" Width="100" FontFamily="Consolas monospace" FontSize="12">connect</Button>
@@ -48,7 +48,8 @@
                 <Button Name="ButtonPreviousPage" Click="Search" Style="{DynamicResource MaterialDesignFlatButton}">
                     <materialDesign:PackIcon Kind="ArrowLeft" Width="18" Height="18" />
                 </Button>
-                <TextBlock Name="TextPageCount" VerticalAlignment="Center" Margin="3" Padding="3">001 / 160</TextBlock>
+	              <TextBox Name="TextPage" VerticalAlignment="Center" Width="35" Margin="3,3,0,3" Padding="3" KeyUp="TextBoxEnterKeyUp">001</TextBox>
+                <TextBlock Name="TextPageCount" VerticalAlignment="Center" Margin="0,3,3,3" Padding="3"> / 160</TextBlock>
                 <Button Name="ButtonNextPage" Click="Search" Style="{DynamicResource MaterialDesignFlatButton}">
                     <materialDesign:PackIcon Kind="ArrowRight" Width="18" Height="18" />
                 </Button>
