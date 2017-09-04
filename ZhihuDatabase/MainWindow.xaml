@@ -20,7 +20,7 @@
                  Margin="3" Padding="3" 
                  FontFamily="Consolas monospace"
                  KeyUp="TextBoxEnterKeyUp">
-	        answer: {"content": {"$regex": "成都"}}
+            answer: {"voteCount": {"$gt": 5000}}
         </TextBox>
         <Button Name="ButtonSearch" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Center" 
                 Style="{DynamicResource MaterialDesignFlatButton}"

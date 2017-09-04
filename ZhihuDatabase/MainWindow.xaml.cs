@@ -214,7 +214,10 @@ namespace ZhihuDatabase
                         var url = $"https://www.zhihu.com/people/{one.GetValue("memberId")}";
                         contentBuilder.Append(String.Format(HtmlContentTemplate,
                             JsonHelper.PrettyPrint(one.ToString()),
-                            $"<p>Avatar: <img src='{one.GetValue("avatarUrl").ToString().Replace("https://", ImageServer)}'></p>",
+                            "<p>" +
+                            $"Avatar: <img src='{one.GetValue("avatarUrl").ToString().Replace("https://", ImageServer)}'> " +
+                            $"<a target='_blank' href='{one.GetValue("avatarUrl").ToString().Replace("https://", ImageServer).Replace("_is", "")}'>(original size)</a>" +
+                            "</p>",
                             count++,
                             $"<a target='_blank' href='{url}'>{url}</a>"));
                     }
